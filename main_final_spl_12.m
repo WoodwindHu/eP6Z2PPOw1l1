@@ -145,7 +145,7 @@ for shape = 1 % soldier
             N_p = pt_p.Count; % pre frame point number
 
             %% compute pre frame normal
-            inter_normal = compute_normal(pt_p, pk);
+            inter_normal = pcnormals(pt_p, pk);
 
             P_p_win = zeros(N_p, pk);
             for i = 1:N_p
@@ -199,7 +199,7 @@ for shape = 1 % soldier
 
                 inter_W = zeros(pk*pn, 1);
 
-                intra_normal = compute_normal(pointCloud(X_pre), pk);
+                intra_normal = pcnormals(pointCloud(X_pre), pk);
 
 %                 N = eye(pk);
 %                 last_R = zeros(6,6);
