@@ -273,19 +273,19 @@ for shape = 1 % soldier
                     patch_T((i - 1) * wink * pk + pk + 1: i * wink * pk, :) = intra_F(reshape(new_intra_patch', 1, []), :);
 
                 end
-                [M,~] = proximal_gradient_descent(patch_S, patch_T, true); % use normal
+                [R,~] = proximal_gradient_descent(patch_S, patch_T, true); % use normal
                 for i = 1:pn
                     for x = 1:pk
                         f1 = intra_F(P(i,x),:)'; % 6*1
                         f2 = inter_F(inter_patch_all(i, x),:)'; % 6*1                     
-                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * M * (f1-f2));
+                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * R'* R * (f1-f2));
                     end  
                     % intra patch
                     for j = 1:(wink - 1) % wedge = P_win(i,:);
                         for x = 1:pk
                             f1 = intra_F(P(i,x),:)'; % 6*1
                             f2 = intra_F(intra_patch_all((i - 1) * (wink - 1) + j,x),:)'; % 6*1
-                            Dist = exp(-(f1-f2)' * M * (f1-f2));
+                            Dist = exp(-(f1-f2)' * R'* R * (f1-f2));
                             D_w(pk*(i-1)+x,j)=Dist;
                             D_i(pk*(i-1)+x,j) = pk*(wedge(j)-1)+x; % new_intra_patch is in the order of patch_c
                         end
@@ -337,6 +337,7 @@ for shape = 1 % soldier
                 % result
                 mset = meandistance(X_gt, X_rec);
                 fid = fopen('result12.txt', 'a');
+                shapename, file, noise(noisetype), itr, mset
                 fprintf(fid, '%s %d %.2f %d %.4f\r\n', shapename, file, noise(noisetype), itr, mset);
                 fclose(fid);
                 X_pre = X_rec;
@@ -347,6 +348,7 @@ for shape = 1 % soldier
             write_ply_only_points(X_rec,[n_filename_ne '_dn12.ply']);
             disp(['meandistance=',num2str(mdc)]);
             fid = fopen('result12.txt', 'a');
+            shapename, file, noise(noisetype), mdc
             fprintf(fid, 'final mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), mdc);
             fclose(fid);
         end
