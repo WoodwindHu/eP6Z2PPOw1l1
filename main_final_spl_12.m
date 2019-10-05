@@ -206,8 +206,11 @@ for shape = 1 % soldier
                 intra_F = [X_pre intra_normal]; % n*6
 
                 % initial value of W_c
-                patch_S = zeros(pn * wink * pk, 6);
-                patch_T = zeros(pn * wink * pk, 6);
+                patch_S = zeros(pn * (wink - 1) * pk, 6);
+                patch_T = zeros(pn * (wink - 1) * pk, 6);
+                % record patches for corresponding patches inter frame
+                patch_S_ = zeros(pn * pk, 6);
+                patch_T_ = zeros(pn * pk, 6);
                 inter_patch_all = zeros(pn, pk);
                 intra_patch_all = zeros(pn * (wink - 1), pk);
                 for i = 1:pn
@@ -255,6 +258,7 @@ for shape = 1 % soldier
 
                     % order of the inter_patch
                     inter_patch = P_p_win(indices(similar_order),:); % 1*pk
+                    inter_patch_center = mean(pt_p.Location(inter_patch, :));
 
                     % find corresponding point
                     intra_patch = zeros((wink-1), pk);
@@ -263,22 +267,27 @@ for shape = 1 % soldier
                         intra_patch(v,:) = indices;
                     end
                     % return order
-                    [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
+%                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
+                    % return order according to relative distance
+                    [new_inter_patch, new_intra_patch] = findCorrespondingPoint4(P(i,:), inter_patch, intra_patch, pt_p, pt_pre, pt_C.Location(i,:), pt_C.Location(P_win(i,:),:), inter_patch_center);
                     inter_patch_all(i,:) = new_inter_patch;
                     intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
                     % graph learning
 
-                    patch_S((i - 1) * wink * pk + 1: i * wink * pk, :) = repmat(intra_F(P(i,:),:), wink, 1);
-                    patch_T((i - 1) * wink * pk + 1: (i - 1) * wink * pk + pk, :) = inter_F(new_inter_patch,:);
-                    patch_T((i - 1) * wink * pk + pk + 1: i * wink * pk, :) = intra_F(reshape(new_intra_patch', 1, []), :);
+                    patch_S((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = repmat(intra_F(P(i,:),:), wink - 1, 1);
+                    patch_T((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = intra_F(reshape(new_intra_patch', 1, []), :);
+                    patch_S_((i - 1) * pk + 1: i * pk, :) = intra_F(P(i,:),:);
+                    patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(new_inter_patch,:);
 
                 end
                 [R,~] = proximal_gradient_descent(patch_S, patch_T, true); % use normal
+                [R_,~] = proximal_gradient_descent(patch_S_, patch_T_, true); % use normal
+                
                 for i = 1:pn
                     for x = 1:pk
                         f1 = intra_F(P(i,x),:)'; % 6*1
                         f2 = inter_F(inter_patch_all(i, x),:)'; % 6*1                     
-                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * R'* R * (f1-f2));
+                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * R_'* R_ * (f1-f2));
                     end  
                     % intra patch
                     for j = 1:(wink - 1) % wedge = P_win(i,:);
