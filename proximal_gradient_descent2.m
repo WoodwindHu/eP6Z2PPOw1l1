@@ -73,7 +73,7 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
     end
 
 %     weights = diag(exp(-(diff * M * diff')));
-    weights = exp(-sum((diff * (R' * R)) .* diff, 2) * 1e-2);
+    weights = exp(-sum((diff * (R' * R)) .* diff, 2));
     cur_val = sum(weights .* dist);
     
 %     weights = zeros(node_dim, 1);
