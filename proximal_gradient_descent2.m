@@ -25,7 +25,7 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
   % D = diag(rand(feat_dim, 1));
   % U = orth(rand(feat_dim, feat_dim));
   % M = U' * D * U;
-  R = eye(feat_dim) * 0.1;
+  R = eye(feat_dim);
   
   last_val = sum(exp(-sum((diff * (R' * R)) .* diff, 2)) .* dist);
 %   last_val = sum(diag(exp(-(diff * M * diff'))) .* dist);
@@ -65,14 +65,15 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
     % L(L > C) = 0.1 * L(L > C);
     % M = real(U * L * U');
 
-    C = 1;
+    C = 10;
     if trace(R) > C
       temp_val = (trace(R) - C) / feat_dim;
-      R(logical(eye(size(R)))) = diag(diag(R) - temp_val);
+      R(logical(eye(size(R)))) = diag(R) - temp_val;
+      disp(['R>C!!! Now trace(R)=', num2str(trace(R))]);
     end
 
 %     weights = diag(exp(-(diff * M * diff')));
-    weights = exp(-sum((diff * (R' * R))) .* diff, 2));
+    weights = exp(-sum((diff * (R' * R)) .* diff, 2) * 1e-2);
     cur_val = sum(weights .* dist);
     
 %     weights = zeros(node_dim, 1);

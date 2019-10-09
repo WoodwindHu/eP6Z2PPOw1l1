@@ -280,22 +280,18 @@ for shape = 1 % soldier
                     patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(new_inter_patch,:);
 
                 end
-                [R,~] = proximal_gradient_descent(patch_S, patch_T, true); % use normal
-                [R_,~] = proximal_gradient_descent(patch_S_, patch_T_, true); % use normal
+                % constrast experiment: diagonal matrix
+%                 [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
+%                 [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
                 
+                [R,D_w, ~] = proximal_gradient_descent2(patch_S, patch_T, true); % use normal
+                [R_,W_t, ~] = proximal_gradient_descent2(patch_S_, patch_T_, true); % use normal
+                D_w = reshape(D_w, [Nf,wink-1]);
+                W_t = reshape(W_t, [pn, pk]);
                 for i = 1:pn
-                    for x = 1:pk
-                        f1 = intra_F(P(i,x),:)'; % 6*1
-                        f2 = inter_F(inter_patch_all(i, x),:)'; % 6*1                     
-                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * R_'* R_ * (f1-f2));
-                    end  
                     % intra patch
                     for j = 1:(wink - 1) % wedge = P_win(i,:);
                         for x = 1:pk
-                            f1 = intra_F(P(i,x),:)'; % 6*1
-                            f2 = intra_F(intra_patch_all((i - 1) * (wink - 1) + j,x),:)'; % 6*1
-                            Dist = exp(-(f1-f2)' * R'* R * (f1-f2));
-                            D_w(pk*(i-1)+x,j)=Dist;
                             D_i(pk*(i-1)+x,j) = pk*(wedge(j)-1)+x; % new_intra_patch is in the order of patch_c
                         end
                     end
@@ -354,7 +350,7 @@ for shape = 1 % soldier
 
             end
             mdc = meandistance(X_gt, X_rec);
-            write_ply_only_points(X_rec,[n_filename_ne '_dn12.ply']);
+            pcwrite(pointCloud(X_rec, 'Color', pt_X.Color),[n_filename_ne '_dn12.ply']);
             disp(['meandistance=',num2str(mdc)]);
             fid = fopen('result12.txt', 'a');
             shapename, file, noise(noisetype), mdc

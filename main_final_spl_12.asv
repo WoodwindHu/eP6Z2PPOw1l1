@@ -19,7 +19,7 @@ addpath './data';
 addpath './ulli';
 noise = [0.03, 0.05, 0.07, 0.1];
 shape_files = [600, 1200, 1200, 1500, 0];
-%% todo
+% todo
 for shape = 1 % soldier
     switch shape
         case 1
@@ -48,31 +48,31 @@ for shape = 1 % soldier
             end
             % nn_filename = ['soldier_vox10_0601_ds_gaussian_noise_0.05.ply']; % next frame
             
-            %% read in file for ground-truth and noisy model
+            % read in file for ground-truth and noisy model
             pt_gt = pcread(gt_filename);
             X_gt = pt_gt.Location;
             pt_X= pcread(n_filename);
             X = pt_X.Location;
             pt_p = pcread(np_filename);
             X_p = pt_p.Location;
-            pt_p = pointCloud(X_p);
+%             pt_p = pointCloud(X_p);
             % pt_n = pcread(nn_filename);
             % X_n = pt_n.Location;
             % pt_n = pointCloud(X_n);
             temp = meandistance(X_gt, X);
             disp(temp);
-            fid = fopen('result9.txt', 'a');
+            fid = fopen('result12.txt', 'a');
             fprintf(fid, 'initial mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), temp);
             fclose(fid);
             %
             % disp(meandensity(X_gt))
-            %% todo end
+            % todo end
             
-            %% parameter settings
+            % parameter settings
             max_itr = 4; change_tolerance = 0.0001; % stop criteria
             % choose fps for uniform sampling
-            %% change from 0.5 to 0.05
-            flag_sample = 1; SAMPLING_SET = ceil(0.05*size(X,1));
+            % change from 0.5 to 0.05
+            flag_sample = 1; SAMPLING_SET = ceil(0.5*size(X,1));
             % if not, use grid sample
             gridStep = 0.7;
             % patch size, searching window size,
@@ -104,20 +104,18 @@ for shape = 1 % soldier
                 end
             end
             if (noisetype == 4)
-                lambda1 = [0.4, 2.1, 6, 12];
+                lambda1 = [0.1, 2.1, 6, 12];
                 if file_e ~= 1
-                    lambda2 = [3000, 0, 0, 0];
+                    lambda2 = [30, 0, 0, 0];
                 end
             end
             % lambda2 = [0 0 0 0]; % baseline
-            %% todo
             winf = 10; % window to find most similar patch in adjcent frames
-            %% todo end
             
-            %% pixel graph (no prefiltering now)
+            % pixel graph (no prefiltering now)
             X_m = X;
             
-            %% patch center, patch construction with size=pk, and patch graph with k=wink
+            % patch center, patch construction with size=pk, and patch graph with k=wink
             pt_pre = pointCloud(X);
             % patch center
             if flag_sample
@@ -142,19 +140,19 @@ for shape = 1 % soldier
                 [indices,dists] = findNearestNeighbors(pt_C,pt_C.Location(i,:),wink);
                 P_win(i,:) = indices;
             end
+            P_win = P_win(:,2:end);
             N_p = pt_p.Count; % pre frame point number
 
-            %% compute pre frame normal
-            inter_normal = compute_normal(pt_p, pk);
+            % compute pre frame normal
+            inter_normal = pcnormals(pt_p, pk);
 
             P_p_win = zeros(N_p, pk);
             for i = 1:N_p
                 [indices,dists] = findNearestNeighbors(pt_p,pt_p.Location(i,:),pk);
                 P_p_win(i,:) = indices;
             end
-            P_win = P_win(:,2:end);
             
-            %% Denoising
+            % Denoising
             dM = zeros(max_itr,1); dH = dM;
             X_pre = X;
             % set center
@@ -169,7 +167,7 @@ for shape = 1 % soldier
             end
             
             for itr = 1:max_itr
-                %% prepare reference frame for each patch: so as to compute height field and projection
+                % prepare reference frame for each patch: so as to compute height field and projection
                 % shift the point wrt the center
                 f = zeros(pn,pk,3); fo = f;
                 for c = 1:3
@@ -186,41 +184,35 @@ for shape = 1 % soldier
                     [Vtmp,Dtmp] = eig(cov);
                     fn(i,:) = Vtmp(:,1); % reference plane with normal vertor stored in fn
                 end
-                %% todo
                 P_p = zeros(pk*pn, 3);
                 P_n = zeros(pk*pn, 3);
-                %% end todo
                 
-                %% patch similarity and connection
+                % patch similarity and connection
                 D_i = zeros(Nf,wink-1);D_w = zeros(Nf,wink-1); tmp_p1 = (1:pk)';
                 D_wp = zeros(Nf, 1);
                 % temp variable for comparing fixed and moving patches
                 fixed = zeros(pk,3); fixed_n = zeros(3,1); moving = fixed;
 
                 inter_W = zeros(pk*pn, 1);
+                pt_pre = pointCloud(X_pre);
+                intra_normal = pcnormals(pt_pre, pk);
 
-                intra_normal = compute_normal(pointCloud(X_pre), pk);
-
-                N = eye(pk);
-                last_R = zeros(6,6);
 
                 inter_order = zeros(pn,1);
 
                 W_t = zeros(pn*pk,1);
-                % W_c = zeros(length(X_pre));
 
                 inter_F = [X_p inter_normal]; % n*6
                 intra_F = [X_pre intra_normal]; % n*6
 
                 % initial value of W_c
-%                 for x = 1:length(X_pre)
-%                     for y = 1:length(X_pre)
-%                         f1 = intra_F(x,:)'; % 6*1
-%                         f2 = intra_F(y,:)';
-%                         W_c(x,y) = exp(-(f1-f2)' * (f1-f2));
-%                     end
-%                 end
-
+                patch_S = zeros(pn * (wink - 1) * pk, 6);
+                patch_T = zeros(pn * (wink - 1) * pk, 6);
+                % record patches for corresponding patches inter frame
+                patch_S_ = zeros(pn * pk, 6);
+                patch_T_ = zeros(pn * pk, 6);
+                inter_patch_all = zeros(pn, pk);
+                intra_patch_all = zeros(pn * (wink - 1), pk);
                 for i = 1:pn
                     fixed(:,:) = f(i,:,:); fixed_n(:) = fn(i,:);
                     % compute height field, and projection on reference plane
@@ -228,10 +220,10 @@ for shape = 1 % soldier
                     % search the neighbors of fixed
                     wedge = P_win(i,:);
 
-                    %% find most similar patch in pre frame
+                    % find most similar patch in pre frame
                     pt_p = pointCloud(X_p);
                     indices = P_winf(i,:);
-                    Dist_min = 999999;
+                    Dist_min = 9999999999;
 
                     similar_order = 0;
                     for j = 1:length(indices)
@@ -256,84 +248,55 @@ for shape = 1 % soldier
                         preserve_id = dmin<=threshold_d;
                         discard_id = dmin>threshold_d;
                         Dsum = 0;
-                        if sum(discard_id)
-                            tempid = find(discard_id);
-                            if sum(discard_id) > 1
-                                [~, IDistMat] = sort(DistMat(discard_id,:),2);
-                                for ii = 1:length(tempid)
-                                    tmp_pt = tempid(ii);
-                                    dx = interpolate_plane(moving(IDistMat(ii,1),:),moving(IDistMat(ii,2),:),moving(IDistMat(ii,3),:),fixed(tmp_pt,:),fixed_n');
-                                    Dsum = Dsum+dx^2;
-                                end
-                            else
-                                [~, IDistMat] = sort(DistMat(discard_id,:));
-                                dx = interpolate_plane(moving(IDistMat(1),:),moving(IDistMat(2),:),moving(IDistMat(3),:),fixed(tempid,:),fixed_n');
-                                Dsum = Dsum+dx^2;
-                            end
-                        end
                         Dist = (sum((hm(idx(preserve_id))-hf(preserve_id)).^2)+Dsum)/pk;
                         
                         if Dist < Dist_min
                             similar_order = j;
                             Dist_min = Dist;
-                                % D_wp(pk*(i-1)+tmp_p1) = Dist;
-                                % P_p(pk*(i-1)+tmp_p1, :) = moving(idx(:), :);
                         end
                     end
 
                     % order of the inter_patch
                     inter_patch = P_p_win(indices(similar_order),:); % 1*pk
+                    inter_patch_center = mean(pt_p.Location(inter_patch, :));
 
-                        %inter_order(i) = indices(similar_order); % order of the similar patch center of patch i
-
-                    %% find corresponding point
-                        % patch_c = X_pre(P(i,:),:);
+                    % find corresponding point
                     intra_patch = zeros((wink-1), pk);
                     for v = 1:(wink-1)
                         [indices,dists] = findNearestNeighbors(pt_pre,pt_C.Location(P_win(i,v),:),pk);
                         intra_patch(v,:) = indices;
                     end
                     % return order
-                    [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
+%                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
+                    % return order according to relative distance
+                    [new_inter_patch, new_intra_patch] = findCorrespondingPoint4(P(i,:), inter_patch, intra_patch, pt_p, pt_pre, pt_C.Location(i,:), pt_C.Location(P_win(i,:),:), inter_patch_center);
+                    inter_patch_all(i,:) = new_inter_patch;
+                    intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
+                    % graph learning
 
-                    %% graph learning
+                    patch_S((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = repmat(intra_F(P(i,:),:), wink - 1, 1);
+                    patch_T((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = intra_F(reshape(new_intra_patch', 1, []), :);
+                    patch_S_((i - 1) * pk + 1: i * pk, :) = intra_F(P(i,:),:);
+                    patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(new_inter_patch,:);
 
-                    % inter patch
-                    patch_s = intra_F(P(i,:),:);
-                    patch_t = inter_F(new_inter_patch,:);
-                    [M,~] = proximal_gradient_descent(patch_s, patch_t, true); % use normal
-                    % [M,~] = proximal_gradient_descent(patch_s, patch_t);
-                    
-                    for x = 1:pk
-                        f1 = intra_F(P(i,x),:)'; % 6*1
-                        f2 = inter_F(new_inter_patch(x),:)'; % 6*1                     
-                        W_t(pk*(i-1)+x) = exp(-(f1-f2)' * M * (f1-f2));
-                    end
-
+                end
+                % diagonal matrix
+%                 [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
+%                 [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
+                
+                [R,D_w, ~] = proximal_gradient_descent2(patch_S, patch_T, true); % use normal
+                [R_,W_t, ~] = proximal_gradient_descent2(patch_S_, patch_T_, true); % use normal
+                D_w = reshape(D_w, [Nf,wink-1]);
+                W_t = reshape(W_t, [pn, pk]);
+                for i = 1:pn
                     % intra patch
-                    for j = 1:length(wedge) % wedge = P_win(i,:);
-                        patch_r = intra_F(new_intra_patch(j,:),:);
-                        [M,~] = proximal_gradient_descent(patch_s, patch_r, true); % use normal
-                        % [M,~] = proximal_gradient_descent(patch_s, patch_r);
+                    for j = 1:(wink - 1) % wedge = P_win(i,:);
                         for x = 1:pk
-                            f1 = intra_F(P(i,x),:)'; % 6*1
-                            f2 = intra_F(new_intra_patch(j,x),:)'; % 6*1
-                            Dist = exp(-(f1-f2)' * M * (f1-f2));
-                            D_w(pk*(i-1)+x,j)=Dist;
                             D_i(pk*(i-1)+x,j) = pk*(wedge(j)-1)+x; % new_intra_patch is in the order of patch_c
                         end
                     end
-%                     for v = 1:(wink-1)                        
-%                         for x = 1:pk
-%                             f1 = intra_F(P(i,x),:)'; % 6*1
-%                             f2 = intra_F(new_intra_patch(v,x),:)'; % 6*1
-%                             W_c(P(i,x),new_intra_patch(v,x)) = exp(-(f1-f2)' * M * (f1-f2));
-%                             W_c(new_intra_patch(v,x),P(i,x)) = exp(-(f1-f2)' * M * (f1-f2));
-%                         end
-%                     end
                 end
-
-                %% weight construction
+                % weight construction
                                
                 % compute L
                 tmp = repmat((1:Nf)',1,wink-1);
@@ -356,25 +319,17 @@ for shape = 1 % soldier
                 A=weight_rec*A*weight_rec;
                 Dn=sum(A);
                 Dn=diag(Dn);
-                L=Dn-A;                
-
-                % W = exp(-(fi-fj)' * M * (fi-fj));
-                % compute L
-                % D = diag(sum(W_c,2));
-                % L = D - W_c;
+                L=Dn-A;           
 
                 % compute W_t
-                    %W_t = diag(W_t);
-                    % D_pp = W_t' * W_t;
                 W_t = sparse((1:Nf)',(1:Nf),W_t,Nf,Nf);
+                D_pp = W_t;
 
-                %% optimization
-                % U - S_t
-                % D_pp - W' * W
+                % optimization
                 X_rec = zeros(length(X_pre),3);
                 tmp = P';
                 U = sparse(1:Nf,tmp(:),ones(Nf,1),Nf,length(X_pre)); 
-                
+                % noisetype=4, mset = 2.4225, lambda1(1)=0.1
                 for c = 1:3
                     t = repmat(X_c(:,c),1,pk);
                     t = t'; t = t(:);
@@ -384,9 +339,10 @@ for shape = 1 % soldier
                     X_rec(:,c) = lsqr(B,double(C),1e-06,10000);
                 end
 
-                %% result
+                % result
                 mset = meandistance(X_gt, X_rec);
-                fid = fopen('result9.txt', 'a');
+                fid = fopen('result12.txt', 'a');
+                shapename, file, noise(noisetype), itr, mset
                 fprintf(fid, '%s %d %.2f %d %.4f\r\n', shapename, file, noise(noisetype), itr, mset);
                 fclose(fid);
                 X_pre = X_rec;
@@ -394,9 +350,10 @@ for shape = 1 % soldier
 
             end
             mdc = meandistance(X_gt, X_rec);
-            write_ply_only_points(X_rec,[n_filename_ne '_dn3.ply']);
+            pcwrite(pointCloud(X_rec, 'Color', pt_X.Color),[n_filename_ne '_dn12.ply']);
             disp(['meandistance=',num2str(mdc)]);
-            fid = fopen('result9.txt', 'a');
+            fid = fopen('result12.txt', 'a');
+            shapename, file, noise(noisetype), mdc
             fprintf(fid, 'final mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), mdc);
             fclose(fid);
         end
