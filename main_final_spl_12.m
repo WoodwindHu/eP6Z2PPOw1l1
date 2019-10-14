@@ -33,7 +33,7 @@ for shape = 1 % soldier
         case 5
             shapename = 'Frame_0141';
     end
-    for noisetype = 1:1
+    for noisetype = 4:4
         for file_e = 1:6
             file = file_e + shape_files(shape);
             %shapenam e = 'gargoyle';%dc,gargoyle,anchor,daratech,lordquas

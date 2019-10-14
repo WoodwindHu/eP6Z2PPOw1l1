@@ -65,7 +65,7 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
     % L(L > C) = 0.1 * L(L > C);
     % M = real(U * L * U');
 
-    C = 10;
+    C = 4;
     if trace(R) > C
       temp_val = (trace(R) - C) / feat_dim;
       R(logical(eye(size(R)))) = diag(R) - temp_val;
