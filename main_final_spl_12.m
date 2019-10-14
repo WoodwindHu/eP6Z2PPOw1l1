@@ -33,7 +33,7 @@ for shape = 1 % soldier
         case 5
             shapename = 'Frame_0141';
     end
-    for noisetype = 4:4
+    for noisetype = 1:1
         for file_e = 1:6
             file = file_e + shape_files(shape);
             %shapenam e = 'gargoyle';%dc,gargoyle,anchor,daratech,lordquas
@@ -42,7 +42,7 @@ for shape = 1 % soldier
             n_filename = ['./data/', shapename , num2str(file), 'ds_gaussian_noise_', num2str(noise(noisetype)), '.ply'];
             n_filename_ne = ['./data/', shapename , num2str(file), 'ds_gaussian_noise_', num2str(noise(noisetype))];
             if file_e == 1
-                np_filename = gt_filename; %empty file
+                np_filename = gt_filename; %not use
             else
                 np_filename = ['./data/', shapename , num2str(file-1), 'ds_gaussian_noise_', num2str(noise(noisetype)), '_dn12.ply'];% pre frame
             end
@@ -58,9 +58,12 @@ for shape = 1 % soldier
             X_p = pt_p.Location;
             % scale normalize
             X_gt = X_gt / size_max;
+            pt_gt = pointCloud(X_gt, 'Color', pt_gt.Color);
             X = X/size_max;
+            pt_X = pointCloud(X, 'Color', pt_X.Color);
             X_p = X_p / size_max;
-            temp = meandistance(X_gt, X);
+            pt_p = pointCloud(X_p, 'Color', pt_p.Color);
+            temp = meandistance(X_gt * size_max, X * size_max);
             disp(temp);
             fid = fopen('result12.txt', 'a');
             fprintf(fid, 'initial mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), temp);
@@ -87,7 +90,7 @@ for shape = 1 % soldier
             % optimization parameter
             gamma=0.5; lambda1 = 30*ones(max_itr,1); lambda2=zeros(max_itr, 1);
             if (noisetype == 1)
-                lambda1 = [7, 40, 70, 300];
+                lambda1 = [1.8, 40, 70, 300];
                 if file_e ~= 1
                     lambda2(1:2) = [0.4, 0];
                 end
@@ -146,14 +149,14 @@ for shape = 1 % soldier
 
             % compute pre frame normal
             inter_normal = pcnormals(pt_p, pk);
-
+            %patches of previous frame
             P_p_win = zeros(N_p, pk);
             for i = 1:N_p
                 [indices,dists] = findNearestNeighbors(pt_p,pt_p.Location(i,:),pk);
                 P_p_win(i,:) = indices;
             end
             
-            % Denoising
+            %% Denoising
             dM = zeros(max_itr,1); dH = dM;
             X_pre = X;
             % set center
@@ -182,7 +185,9 @@ for shape = 1 % soldier
                 P_n = zeros(pk*pn, 3);
                 
                 % patch similarity and connection
-                D_i = zeros(Nf,wink-1);D_w = zeros(Nf,wink-1); tmp_p1 = (1:pk)';
+                D_i = zeros(Nf,wink-1);
+%                 D_w = zeros(Nf,wink-1); 
+                tmp_p1 = (1:pk)';
                 D_wp = zeros(Nf, 1);
                 % temp variable for comparing fixed and moving patches
                 fixed = zeros(pk,3); fixed_n = zeros(3,1); moving = fixed;
@@ -191,7 +196,7 @@ for shape = 1 % soldier
                 pt_pre = pointCloud(X_pre);
                 intra_normal = pcnormals(pt_pre, pk);
                 % normal at each center
-                fn = zeros(pn,3); 
+%                 fn = zeros(pn,3); 
 %                 ptmp = zeros(pk,3);
 %                 for i = 1:pn
 %                     ptmp(:,:) = f(i,:,:);
@@ -203,7 +208,6 @@ for shape = 1 % soldier
 
                 inter_order = zeros(pn,1);
 
-                W_t = zeros(pn*pk,1);
 
                 inter_F = [X_p inter_normal]; % n*6
                 intra_F = [X_pre intra_normal]; % n*6
@@ -214,9 +218,8 @@ for shape = 1 % soldier
                 % record patches for corresponding patches inter frame
                 patch_S_ = zeros(pn * pk, 6);
                 patch_T_ = zeros(pn * pk, 6);
-                inter_patch_all = zeros(pn, pk);
-                intra_patch_all = zeros(pn * (wink - 1), pk);
-                pt_p = pointCloud(X_p);
+%                 inter_patch_all = zeros(pn, pk);
+%                 intra_patch_all = zeros(pn * (wink - 1), pk);
                 for i = 1:pn
                     fixed(:,:) = f(i,:,:); fixed_n(:) = fn(i,:);
                     % compute height field, and projection on reference plane
@@ -272,8 +275,8 @@ for shape = 1 % soldier
 %                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
                     % return order according to relative distance
                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint5(P(i,:), inter_patch, intra_patch, inter_F, intra_F, i, ifps(P_win(i,:)), indices(similar_order));
-                    inter_patch_all(i,:) = new_inter_patch;
-                    intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
+%                     inter_patch_all(i,:) = new_inter_patch;
+%                     intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
                     % graph learning
 
                     patch_S((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = repmat(intra_F(P(i,:),:), wink - 1, 1);
@@ -288,8 +291,8 @@ for shape = 1 % soldier
                 
                 [R,D_w, ~] = proximal_gradient_descent2(patch_S, patch_T, true); % use normal
                 [R_,W_t, ~] = proximal_gradient_descent2(patch_S_, patch_T_, true); % use normal
-                D_w = reshape(D_w, [Nf,wink-1]);
-                W_t = reshape(W_t, [pn, pk]);
+%                 D_w = reshape(D_w, [wink-1, Nf])';
+                W_t = reshape(W_t, [pk, pn])';
                 for i = 1:pn
                     % intra patch
                     for j = 1:(wink - 1) % wedge = P_win(i,:);
@@ -304,15 +307,15 @@ for shape = 1 % soldier
                 tmp = repmat((1:Nf)',1,wink-1);
                 D_p = sparse(tmp(:),D_i(:),D_w(:),Nf,Nf);
                 A = D_p;
-                if noisetype == 1
-                    A(A>5) = 0;
-                else
-                    if noisetype == 3
-                        A(A>10) = 0;
-                    elseif noisetype == 4
-                        A(A>30) = 0;
-                    end
-                end
+%                 if noisetype == 1
+%                     A(A>5) = 0;
+%                 else
+%                     if noisetype == 3
+%                         A(A>10) = 0;
+%                     elseif noisetype == 4
+%                         A(A>30) = 0;
+%                     end
+%                 end
                 mask1 = logical(tril(A));
                 A = A-mask1'.*A;
                 A = A+A';
@@ -342,21 +345,22 @@ for shape = 1 % soldier
                 end
 
                 % result
-                mset = meandistance(X_gt, X_rec);
+                mset = meandistance(X_gt * size_max, X_rec * size_max);
                 fid = fopen('result12.txt', 'a');
-                fprintf('%s %d %.2f %d %.4f', shapename, file, noise(noisetype), itr, mset * 100);
-                fprintf(fid, '%s %d %.2f %d %.4f\r\n', shapename, file, noise(noisetype), itr, mset * 100);
+                fprintf('%s %d %.2f %d %.4f', shapename, file, noise(noisetype), itr, mset);
+                fprintf(fid, '%s %d %.2f %d %.4f\r\n', shapename, file, noise(noisetype), itr, mset);
                 fclose(fid);
                 X_pre = X_rec;
                 X_m = X_pre;
 
             end
-            mdc = meandistance(X_gt, X_rec);
+            mdc = meandistance(X_gt * size_max, X_rec * size_max);
             pcwrite(pointCloud(X_rec * size_max, 'Color', pt_X.Color),[n_filename_ne '_dn12.ply']);
             disp(['meandistance=',num2str(mdc)]);
             fid = fopen('result12.txt', 'a');
-            shapename, file, noise(noisetype), mdc
-            fprintf(fid, 'final mse(*100) %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), mdc*100);
+%             shapename, file, noise(noisetype), mdc
+            fprintf('final mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), mdc);
+            fprintf(fid, 'final mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), mdc);
             fclose(fid);
         end
     end

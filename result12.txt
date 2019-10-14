@@ -142,3 +142,43 @@ soldier_vox10_0 601 0.10 3 0.2345
 soldier_vox10_0 601 0.10 4 0.2346
 final mse(*100) soldier_vox10_0 601 0.10 0.2346
 initial mse soldier_vox10_0 602 0.10 0.0029
+initial mse soldier_vox10_0 601 0.03 0.0577
+soldier_vox10_0 601 0.03 1 5.7699
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 0.1428
+soldier_vox10_0 601 0.03 2 0.1428
+soldier_vox10_0 601 0.03 3 0.1428
+soldier_vox10_0 601 0.03 4 0.1428
+final mse(*100) soldier_vox10_0 601 0.03 0.1428
+initial mse soldier_vox10_0 602 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 0.1428
+soldier_vox10_0 601 0.03 2 0.1428
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 0.1428
+soldier_vox10_0 601 0.03 2 0.1428
+soldier_vox10_0 601 0.03 3 0.1428
+soldier_vox10_0 601 0.03 4 0.1428
+final mse(*100) soldier_vox10_0 601 0.03 0.1428
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 0.1428
+soldier_vox10_0 601 0.03 2 0.1428
+soldier_vox10_0 601 0.03 3 0.1428
+soldier_vox10_0 601 0.03 4 0.1428
+final mse(*100) soldier_vox10_0 601 0.03 0.1428
+initial mse soldier_vox10_0 602 0.03 0.0015
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 14.3165
+initial mse soldier_vox10_0 601 0.03 0.0015
+soldier_vox10_0 601 0.03 1 0.1428
+soldier_vox10_0 601 0.03 2 0.1428
+soldier_vox10_0 601 0.03 3 14.2829
+soldier_vox10_0 601 0.03 4 0.1428
+final mse(*100) soldier_vox10_0 601 0.03 0.1428
+initial mse soldier_vox10_0 602 0.03 0.0015
