@@ -184,3 +184,54 @@ final mse(*100) soldier_vox10_0 601 0.03 0.1428
 initial mse soldier_vox10_0 602 0.03 0.0015
 initial mse soldier_vox10_0 601 0.03 1.4950
 initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+soldier_vox10_0 601 0.10 1 2.3983
+soldier_vox10_0 601 0.10 2 2.4020
+soldier_vox10_0 601 0.10 3 2.4039
+soldier_vox10_0 601 0.10 4 2.4049
+final mse soldier_vox10_0 601 0.10 2.4049
+initial mse soldier_vox10_0 602 0.10 3.0141
+soldier_vox10_0 602 0.10 1 2.5059
+soldier_vox10_0 602 0.10 2 2.5072
+soldier_vox10_0 602 0.10 3 2.5074
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975
+initial mse soldier_vox10_0 601 0.10 2.9975

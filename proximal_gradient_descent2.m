@@ -2,7 +2,7 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
   if ~exist('use_normal', 'var')
     use_normal = true;
   end
-  step = 1e-5;
+  step = 1e-6;
   first = true;
   max_iter = 50;
   % initialize variables
@@ -42,7 +42,7 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
 %     str = ['Building graph... ', ...
 %             num2str(roundn(iter * 100.0 / max_iter, -1)), '%'];
 %     waitbar(iter / max_iter, h, str)
-    gR = zeros(4);
+    gR = zeros(feat_dim);
 %     coef = diag(exp(-(diff * M * diff'))) .* dist;
     coef = exp(-sum((diff * (R' * R)) .* diff, 2)) .* dist;
     for i = 1 : node_dim
@@ -65,11 +65,11 @@ function [R, weights, pr] = proximal_gradient_descent2(patch_s, patch_t, use_nor
     % L(L > C) = 0.1 * L(L > C);
     % M = real(U * L * U');
 
-    C = 4;
+    C = 10;
     if trace(R) > C
       temp_val = (trace(R) - C) / feat_dim;
       R(logical(eye(size(R)))) = diag(R) - temp_val;
-      disp(['R>C!!! Now trace(R)=', num2str(trace(R))]);
+%       disp(['R>C!!! Now trace(R)=', num2str(trace(R))]);
     end
 
 %     weights = diag(exp(-(diff * M * diff')));

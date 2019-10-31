@@ -51,7 +51,7 @@ for shape = 1 % soldier
             % read in file for ground-truth and noisy model
             pt_gt = pcread(gt_filename);
             X_gt = pt_gt.Location;
-            size_max = max(max(X_gt));
+            size_max = max(max(X_gt)) / 20;
             pt_X= pcread(n_filename);
             X = pt_X.Location;
             pt_p = pcread(np_filename);
@@ -108,7 +108,7 @@ for shape = 1 % soldier
                 end
             end
             if (noisetype == 4)
-                lambda1 = [0.1, 2.1, 6, 12];
+                lambda1 = [10, 2.1, 6, 12];
                 if file_e ~= 1
                     lambda2 = [30, 0, 0, 0];
                 end
@@ -185,7 +185,7 @@ for shape = 1 % soldier
                 P_n = zeros(pk*pn, 3);
                 
                 % patch similarity and connection
-                D_i = zeros(Nf,wink-1);
+                D_i = zeros(pn*pk,wink-1);
 %                 D_w = zeros(Nf,wink-1); 
                 tmp_p1 = (1:pk)';
                 D_wp = zeros(Nf, 1);
@@ -268,8 +268,7 @@ for shape = 1 % soldier
                     % find corresponding point
                     intra_patch = zeros((wink-1), pk);
                     for v = 1:(wink-1)
-                        [temp,dists] = findNearestNeighbors(pt_pre,pt_C.Location(P_win(i,v),:),pk);
-                        intra_patch(v,:) = temp;
+                        intra_patch(v,:) = P(P_win(i,v),:);
                     end
                     % return order
 %                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
@@ -278,29 +277,39 @@ for shape = 1 % soldier
 %                     inter_patch_all(i,:) = new_inter_patch;
 %                     intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
                     % graph learning
-
-                    patch_S((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = repmat(intra_F(P(i,:),:), wink - 1, 1);
-                    patch_T((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = intra_F(reshape(new_intra_patch', 1, []), :);
+                    
+                    for j = 1:pk
+                        patch_S((i - 1) * (wink - 1) * pk + (j - 1) * (wink - 1) + 1: (i - 1) * (wink - 1) * pk + j * (wink - 1), :) = repmat(intra_F(P(i,j),:), wink - 1, 1);
+                    end 
+                    patch_T((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = intra_F(reshape(new_intra_patch, 1, []), :);
+                    temp = zeros(wink - 1, pk);
+                    for j = 1:wink - 1
+                        for k = 1:pk 
+                            temp(j,k) = find(intra_patch(j,:) == new_intra_patch(j,k));
+                        end
+                    end
+                    D_i(pk*(i-1)+1:pk*i,:) = ((repmat(P_win(i,:)',1,pk) - 1)*pk + temp)';
                     patch_S_((i - 1) * pk + 1: i * pk, :) = intra_F(P(i,:),:);
                     patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(new_inter_patch,:);
 
                 end
                 % constrast experiment: diagonal matrix
-%                 [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
-%                 [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
+                [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
+                histogram(D_w);
+                [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
                 
-                [R,D_w, ~] = proximal_gradient_descent2(patch_S, patch_T, true); % use normal
-                [R_,W_t, ~] = proximal_gradient_descent2(patch_S_, patch_T_, true); % use normal
-%                 D_w = reshape(D_w, [wink-1, Nf])';
-                W_t = reshape(W_t, [pk, pn])';
-                for i = 1:pn
-                    % intra patch
-                    for j = 1:(wink - 1) % wedge = P_win(i,:);
-                        for x = 1:pk
-                            D_i(pk*(i-1)+x,j) = pk*(wedge(j)-1)+x; % new_intra_patch is in the order of patch_c
-                        end
-                    end
-                end
+%                 [R,D_w, ~] = proximal_gradient_descent3(patch_S, patch_T, true); % use normal
+%                 histogram(D_w);
+%                 [R_,W_t, ~] = proximal_gradient_descent3(patch_S_, patch_T_, true); % use normal
+%                 for i = 1:pn
+%                     % intra patch
+%                     wedge = P_win(i,:);
+%                     for j = 1:(wink - 1) % 
+%                         for x = 1:pk
+%                             D_i((wink-1)*(i-1)+j,x) = pk*(wedge(j)-1)+x; % new_intra_patch is in the order of patch_c
+%                         end
+%                     end
+%                 end
                 % weight construction
                                
                 % compute L
