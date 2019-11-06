@@ -65,7 +65,7 @@ for shape = 1 % soldier
             pt_p = pointCloud(X_p, 'Color', pt_p.Color);
             temp = meandistance(X_gt * size_max, X * size_max);
             disp(temp);
-            fid = fopen('result12.txt', 'a');
+            fid =  fopen('result12.txt', 'a');
             fprintf(fid, 'initial mse %s %d %.2f %.4f\r\n', shapename, file, noise(noisetype), temp);
             fclose(fid);
             %
@@ -73,14 +73,14 @@ for shape = 1 % soldier
             % todo end
             
             % parameter settings
-            max_itr = 4; change_tolerance = 0.0001; % stop criteria
+            max_itr = 4; % stop criteria
             % choose fps for uniform sampling
             % change from 0.5 to 0.05
             flag_sample = 1; SAMPLING_SET = ceil(0.5*size(X,1));
             % if not, use grid sample
             gridStep = 0.7;
             % patch size, searching window size(wink nearest patches),
-            pk = 30; wink = 16;
+            pk = 8; wink = 16;
             % graph construction parameter: epsilon, patch similarity threshold
             eps1 = 0.45*ones(max_itr,1); eps1(1:2)=[1.05, 0.75]; eps1 = eps1.^2;
             threshold_d = 20;
@@ -270,37 +270,34 @@ for shape = 1 % soldier
                     for v = 1:(wink-1)
                         intra_patch(v,:) = P(P_win(i,v),:);
                     end
-                    % return order
-%                     [new_inter_patch, new_intra_patch] = findCorrespondingPoint2(P(i,:), inter_patch, intra_patch, pt_p, pt_pre);
                     % return order according to relative distance
-                    [new_inter_patch, new_intra_patch] = findCorrespondingPoint5(P(i,:), inter_patch, intra_patch, inter_F, intra_F, i, ifps(P_win(i,:)), indices(similar_order));
-%                     inter_patch_all(i,:) = new_inter_patch;
-%                     intra_patch_all((i - 1) * (wink - 1) + 1: i * (wink - 1), :) = new_intra_patch;
-                    % graph learning
-                    
+                    [idx_inter, idx_intra] = findCorrespondingPoint5(P(i,:), inter_patch, intra_patch, inter_F, intra_F, i, ifps(P_win(i,:)), indices(similar_order));
+                    new_intra_patch = zeros(wink - 1, pk);
+                    for j = 1:(wink - 1)
+                        new_intra_patch(j,:) = intra_patch(j, idx_intra(j,:));
+                    end
                     for j = 1:pk
                         patch_S((i - 1) * (wink - 1) * pk + (j - 1) * (wink - 1) + 1: (i - 1) * (wink - 1) * pk + j * (wink - 1), :) = repmat(intra_F(P(i,j),:), wink - 1, 1);
                     end 
                     patch_T((i - 1) * (wink - 1) * pk + 1: i * (wink - 1) * pk, :) = intra_F(reshape(new_intra_patch, 1, []), :);
-                    temp = zeros(wink - 1, pk);
                     for j = 1:wink - 1
-                        for k = 1:pk 
-                            temp(j,k) = find(intra_patch(j,:) == new_intra_patch(j,k));
-                        end
+                        D_i(pk*(i-1)+(1:pk)',j) = pk*(P_win(i,j) - 1) + idx_intra(j,:);
                     end
-                    D_i(pk*(i-1)+1:pk*i,:) = ((repmat(P_win(i,:)',1,pk) - 1)*pk + temp)';
                     patch_S_((i - 1) * pk + 1: i * pk, :) = intra_F(P(i,:),:);
-                    patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(new_inter_patch,:);
+                    patch_T_((i - 1) * pk + 1: i * pk, :) = inter_F(inter_patch(idx_inter),:);
 
                 end
                 % constrast experiment: diagonal matrix
-                [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
-                histogram(D_w);
-                [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
-                
-%                 [R,D_w, ~] = proximal_gradient_descent3(patch_S, patch_T, true); % use normal
+%                 [R,D_w, ~] = proximal_gradient_descent2_eyes(patch_S, patch_T, true); % use normal
 %                 histogram(D_w);
-%                 [R_,W_t, ~] = proximal_gradient_descent3(patch_S_, patch_T_, true); % use normal
+%                 [R_,W_t, ~] = proximal_gradient_descent2_eyes(patch_S_, patch_T_, true); % use normal
+                
+                [R,D_w, pr] = proximal_gradient_descent3(patch_S, patch_T, true); % use normal
+                pr
+                D_w = reshape(D_w, wink - 1, pn * pk)';
+                histogram(D_w);
+                [R_,W_t, pr] = proximal_gradient_descent3(patch_S_, patch_T_, true); % use normal
+                pr
 %                 for i = 1:pn
 %                     % intra patch
 %                     wedge = P_win(i,:);
@@ -328,7 +325,6 @@ for shape = 1 % soldier
                 mask1 = logical(tril(A));
                 A = A-mask1'.*A;
                 A = A+A';
-                A(A>0)=exp(-A(A>0)./(2*eps1(itr)));
                 weight_rec=diag(sum(A).^(-gamma));
                 A=weight_rec*A*weight_rec;
                 Dn=sum(A);

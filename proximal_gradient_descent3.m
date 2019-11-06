@@ -1,12 +1,12 @@
 function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_normal)
-  C = 10;
+  C = 4;
   if ~exist('use_normal', 'var')
     use_normal = true;
   end
   step = 1e-5;
   flag = 1;
   first = true;
-  max_iter = 50;
+  max_iter = 30;
   % initialize variables
   diff = patch_s(:, 1:3) - patch_t(:, 1:3);
   if use_normal
@@ -67,10 +67,9 @@ function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_nor
     % L(L > C) = 0.1 * L(L > C);
     % M = real(U * L * U');
     
-    if trace(R'*R) > C
-      temp_val = sqrt(trace(R'*R) / C);
-%       R(logical(eye(size(R)))) = diag(R)/ temp_val;
-      R = R/temp_val;
+    if trace(R) > C
+      temp_val = trace(R) / C;
+      R(logical(eye(size(R)))) = diag(R)/ temp_val;
       if flag ==1 
       disp(['R>C!!! Now trace(R)=', num2str(trace(R))]);
       flag = 0;
@@ -79,7 +78,7 @@ function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_nor
 
 %     weights = diag(exp(-(diff * M * diff')));
     weights = exp(-sum((diff*R').*(diff*R'), 2));
-    histogram(weights);
+%     histogram(weights);
     cur_val = sum(weights .* dist);
     
 %     weights = zeros(node_dim, 1);

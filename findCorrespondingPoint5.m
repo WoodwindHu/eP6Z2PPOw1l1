@@ -16,7 +16,7 @@ function [new_inter_patch, new_intra_patch] = findCorrespondingPoint5(patch_c, p
     xy = fixed_proj*moving_proj';
     DistMat = repmat(xx,1,length(yy))-2*xy+repmat(yy',length(xx),1);
     [~, idx] = min(DistMat,[],2);
-    new_inter_patch = patch_inter(idx);
+    new_inter_patch = idx;
     
 	[p, q] = size(patch_intra);
 	new_intra_patch = zeros(p,q);
@@ -28,6 +28,6 @@ function [new_inter_patch, new_intra_patch] = findCorrespondingPoint5(patch_c, p
         xy = fixed_proj*moving_proj';
         DistMat = repmat(xx,1,length(yy))-2*xy+repmat(yy',length(xx),1);
         [~, idx] = min(DistMat,[],2);
-        new_intra_patch(i,:) = patch_intra(i,idx);
+        new_intra_patch(i,:) = idx;
     end
 end
