@@ -94,6 +94,7 @@ for shape = 1:1
             winf = 10; % window to find most similar patch in adjcent frames
             %% todo end
             
+            
             inter_normal = pcnormals(pt_p, pk);
             
             %% pixel graph (no prefiltering now)
@@ -200,9 +201,9 @@ for shape = 1:1
                         % height field and projection on plane
                         hm = moving*fixed_n; moving_proj = moving-hm*fixed_n';
                         % use projection for neighbor search
-                        xx = sum((fixed_proj.^2),2);
-                        yy = sum((moving_proj.^2),2);
-                        xy = fixed_proj*moving_proj';
+                        xx = sum((fixed.^2),2);
+                        yy = sum((moving.^2),2);
+                        xy = fixed*moving';
                         DistMat = repmat(xx,1,length(yy))-2*xy+repmat(yy',length(xx),1);
                         [dmin, idx] = min(DistMat,[],2);
                         % use height field for computing distance
@@ -229,9 +230,9 @@ for shape = 1:1
                         % height field and projection on plane
                         hm = moving*fixed_n; moving_proj = moving-hm*fixed_n';
                         % use projection for neighbor search
-                        xx = sum((fixed_proj.^2),2);
-                        yy = sum((moving_proj.^2),2);
-                        xy = fixed_proj*moving_proj';
+                        xx = sum((fixed.^2),2);
+                        yy = sum((moving.^2),2);
+                        xy = fixed*moving';
                         DistMat = repmat(xx,1,length(yy))-2*xy+repmat(yy',length(xx),1);
                         [dmin, idx] = min(DistMat,[],2);
                         % use height field for computing distance
