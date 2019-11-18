@@ -39,7 +39,7 @@ for shape = 1:1
             pt_gt = pcread(gt_filename);
             X_gt = pt_gt.Location;
             
-            size_max = max(max(X_gt)) / 20;
+            size_max = max(max(X_gt)) / 60;
             
             pt_X= pcread(n_filename);
             X = pt_X.Location;
@@ -63,7 +63,7 @@ for shape = 1:1
             % if not, use grid sample
             gridStep = 0.7;
             % patch size, searching window size,
-            pk = 30; wink = 9;
+            pk = 20; wink = 9;
             % graph construction parameter: epsilon, patch similarity threshold
             eps1 = 0.45*ones(max_itr,1); eps1(1:2)=[1.05, 0.75]; eps1 = eps1.^2;
             threshold_d = 20;
@@ -71,10 +71,10 @@ for shape = 1:1
             gamma=0.5; lambda1 = 0.2*ones(max_itr,1); lambda2=zeros(max_itr, 1);
             lambda1(1:4) = [3 25 70 300];
             if file_e ~= 1
-                lambda2(1:2) = [3, 4];
+                lambda2(1:2) = [0.4, 0];
             end
             %% todo
-            winf = 10; % window to find most similar patch in adjcent frames
+            winf = 8; % window to find most similar patch in adjcent frames
             %% todo end
             
             inter_normal = pcnormals(pt_p, pk);
@@ -230,12 +230,13 @@ for shape = 1:1
                     
                 end
                 
-                [R,D_w, pr] = proximal_gradient_descent3(patch_S, patch_T, true); % use normal
-%                 pr'
+                [R,D_w, pr] = proximal_gradient_descent16(patch_S, patch_T, true); % use normal
+                R
+                pr'
                 D_w = reshape(D_w, wink - 1, pn * pk)';
                 histogram(D_w);
-                [R_,D_wp, pr] = proximal_gradient_descent3(patch_S_, patch_T_, true); % use normal
-%                 pr'
+                [R_,D_wp, pr] = proximal_gradient_descent16(patch_S_, patch_T_, true); % use normal
+                pr'
                 
                 tmp = repmat((1:Nf)',1,wink-1);
                 D_p = sparse(tmp(:),D_i(:),D_w(:),Nf,Nf);
@@ -267,22 +268,25 @@ for shape = 1:1
                     X_rec(:,c) = lsqr(B,double(C),1e-06,10000);
                     
                 end
-                dM(itr,1) = meandistance(X_gt*size_max, X_rec*size_max);
-                change_dM = meandistance(X_pre*size_max, X_rec*size_max);
-                disp([num2str(itr), ',', num2str(lambda1(itr)), ',', num2str(lambda2(itr)), ',' ,num2str(dM(itr,1)) ', ' num2str(change_dM) '\n']);
                 pc = pointCloud(X_rec*size_max, 'Color', pt_X.Color);
                 name = ['./data/' n_filename_ne 'xrec_' num2str(itr) '_' num2str(lambda1(itr)) '_' num2str(lambda2(itr)) '.ply'];
                 pcwrite(pc, name);
 %                 write_ply_only_points(X_rec,['./data/' n_filename_ne 'xrec_' num2str(itr) '_' num2str(lambda1(itr)) '_' num2str(lambda2(itr)) '.ply']);
+                dM(itr,1) = meandistance(X_gt*size_max, X_rec*size_max);
+                change_dM = meandistance(X_pre*size_max, X_rec*size_max);
+                disp([num2str(itr), ',', num2str(lambda1(itr)), ',', num2str(lambda2(itr)), ',' ,num2str(dM(itr,1)) ', ' num2str(change_dM) '\n']);
+                % 1 2.1852
                 if change_dM < change_tolerance % terminate if it doesn't change too much
                     break;
                 end
+                
+                
                 %     end
                 X_pre = X_rec;
                 X_m = X_pre;
             end
-              pcwrite(pc, ['./data/' n_filename_ne '_dn.ply']);
-            disp(['meandistance=',num2str(dM(max_itr,1))]);
+            pcwrite(pc, ['./data/' n_filename_ne '_dn.ply']);
+            disp(['meandistance=',num2str(mdc)]);
         end
     end
 end
