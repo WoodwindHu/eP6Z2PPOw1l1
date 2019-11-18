@@ -1,12 +1,12 @@
 function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_normal)
-  C = 4;
+  C = 10;
   if ~exist('use_normal', 'var')
     use_normal = true;
   end
-  step = 1e-5;
+  step = 0;
   flag = 1;
   first = true;
-  max_iter = 30;
+  max_iter = 5;
   % initialize variables
   diff = patch_s(:, 1:3) - patch_t(:, 1:3);
   if use_normal
@@ -19,54 +19,26 @@ function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_nor
   [node_dim, feat_dim] = size(diff);
   
   dist = sum(abs(patch_s(:, 1:3) - patch_t(:, 1:3)) .^ 2, 2);
-  %dist = zeros(node_dim, 1);
-  %for i = 1 : node_dim
-  %  dist(i, 1) = norm(patch_s(i, 1:3) - patch_t(i, 1:3), 2) ^ 2;
-  %end
-
-  % D = diag(rand(feat_dim, 1));
-  % U = orth(rand(feat_dim, feat_dim));
-  % M = U' * D * U;
   R = eye(feat_dim);
   
   last_val = sum(exp(-sum((diff * (R' * R)) .* diff, 2)) .* dist);
-%   last_val = sum(diag(exp(-(diff * M * diff'))) .* dist);
-  
-%   last_val = 0;
-%   for i = 1 : node_dim
-%     last_val = last_val + exp(-(diff(i, :) * M * diff(i, :)')) * dist(i, 1);
-%   end
   pr = last_val;
   % calculate gradient
-%   used = false;
-%   h = waitbar(0, 'please wait');
   for iter = 1 : max_iter
-%     str = ['Building graph... ', ...
-%             num2str(roundn(iter * 100.0 / max_iter, -1)), '%'];
-%     waitbar(iter / max_iter, h, str)
     gR = zeros(4);
-%     coef = diag(exp(-(diff * M * diff'))) .* dist;
     coef = exp(-sum((diff*R').*(diff*R'), 2)) .* dist;
-    for i = 1 : node_dim
-%       grad = exp(-(diff(i, :) * M * diff(i, :)'));
-%       grad = grad * dist(i, 1) * diff(i, :)' * diff(i, :);
-%       gM = gM + grad;
-      gR = gR + 2 * diff(i, :)' * diff(i, :) * R * coef(i);
-    end
+%     for i = 1 : node_dim
+%       gR = gR + 2 * diff(i, :)' * diff(i, :) * R * coef(i);
+%     end
+    gR = 2* (repmat(coef, 1, feat_dim) .* diff)' * diff*R;
     gR = -gR;
+    if step == 0
+        step = 10^(-ceil(log10(abs(gR(1:1)))));
+    end
     R = R - step * gR;
-
-    % projection
-    % [U, L] = eig(M);
-
-    % if first
-      % C = median(diag(L));
-      % first = false;
-    % end
-    % L = max(L, 0);
-    % L(L > C) = 0.1 * L(L > C);
-    % M = real(U * L * U');
-    
+    for i = 1: feat_dim
+        R(i,i)=max(R(i,i),0);
+    end
     if trace(R) > C
       temp_val = trace(R) / C;
       R(logical(eye(size(R)))) = diag(R)/ temp_val;
@@ -76,18 +48,8 @@ function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_nor
       end
     end
 
-%     weights = diag(exp(-(diff * M * diff')));
     weights = exp(-sum((diff*R').*(diff*R'), 2));
-%     histogram(weights);
     cur_val = sum(weights .* dist);
-    
-%     weights = zeros(node_dim, 1);
-%     cur_val = 0;
-%     for i = 1 : node_dim
-%       weights(i, 1) = exp(-(diff(i, :) * M * diff(i, :)'));
-%       cur_val = cur_val + weights(i, 1) * dist(i, 1);
-%     end
-%     disp(['cur val:', num2str(cur_val)]);
     if cur_val - last_val < 0 && abs(cur_val - last_val) < 10
       disp(['Max iter: ', num2str(iter)]);
       break;
@@ -95,10 +57,8 @@ function [R, weights, pr] = proximal_gradient_descent3(patch_s, patch_t, use_nor
     last_val = cur_val;
     pr = [pr; last_val];
   end
-%   delete(h);
-%   disp(['used:', num2str(used)]);
-%   if iter >= max_iter
-%     disp(['Max iter: ', num2str(max_iter)]);
-%   end
+%   histogram(weights);
+  weights(weights>0.99) = 0;
+%   histogram(weights);
 end
 
